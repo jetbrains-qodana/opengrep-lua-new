@@ -1,7 +1,7 @@
 /*
  * semgrep-lua
  *
- * Extend the standard Lua grammar (grammar/tree-sitter-lua) with the
+ * Extend the standard Lua grammar (../tree-sitter-lua) with the
  * constructs needed to parse semgrep patterns.
  */
 

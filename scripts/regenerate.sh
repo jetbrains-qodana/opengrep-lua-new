@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Regenerate the Lua parser from the grammars in grammar/.
+# Regenerate the Lua parser from the grammars in fyi/semgrep-grammars/src/.
 #
 # usage: scripts/regenerate.sh
 #
@@ -18,6 +18,7 @@
 set -eu -o pipefail
 
 here=$(cd "$(dirname "$0")/.." && pwd)
+grammars="$here"/fyi/semgrep-grammars/src
 tree_sitter=${TREE_SITTER:-tree-sitter}
 ocaml_tree_sitter=${OCAML_TREE_SITTER:-ocaml-tree-sitter}
 expected_tree_sitter_version=0.22.6
@@ -44,11 +45,11 @@ trap 'rm -rf "$work"' EXIT
 # Inputs: the upstream grammar as a CommonJS module that the semgrep
 # extension can require(), and the external scanner.
 "$here"/scripts/esm-to-cjs.sh \
-  "$here"/grammar/tree-sitter-lua/grammar.js \
+  "$grammars"/tree-sitter-lua/grammar.js \
   "$work"/node_modules/tree-sitter-lua/grammar.js
 mkdir -p "$work"/semgrep-lua/src
-cp "$here"/grammar/semgrep-lua/grammar.js "$work"/semgrep-lua/
-cp "$here"/grammar/tree-sitter-lua/src/scanner.c "$work"/semgrep-lua/src/
+cp "$grammars"/semgrep-lua/grammar.js "$work"/semgrep-lua/
+cp "$grammars"/tree-sitter-lua/src/scanner.c "$work"/semgrep-lua/src/
 cd "$work"/semgrep-lua
 
 echo "Generating src/grammar.json and src/parser.c"
@@ -97,17 +98,15 @@ sed -e "s/@BIN_PUBLIC_NAME@/$bin_public_name/" \
 sed -e "s/@LIB_MODULE@/$lib_module/" "$here"/templates/Main.ml.in \
   > "$bin"/Main.ml
 
-# Informational copies of the source grammars and versions.
+# The versions used. The source grammars in fyi/semgrep-grammars/ are
+# the inputs of this script and are kept.
 fyi="$here"/fyi
 echo "Writing $fyi"
-rm -rf "$fyi"
-mkdir -p "$fyi"
-cp src/grammar.json.orig "$fyi"/grammar.json
-cp src/node-types.json "$fyi"/node-types.json
+"$tree_sitter" --version > "$fyi"/tree-sitter-version
 {
   echo "tree-sitter: $("$tree_sitter" --version)"
   echo "ABI: $expected_abi"
   echo "ocaml-tree-sitter: ${OCAML_TREE_SITTER_VERSION:-unknown}"
   echo
-  cat "$here"/grammar/tree-sitter-lua/VERSION
+  cat "$grammars"/tree-sitter-lua/VERSION
 } > "$fyi"/versions
